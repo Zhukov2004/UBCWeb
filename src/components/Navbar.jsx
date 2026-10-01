@@ -1,94 +1,78 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { BookOpen, Calendar, Home as HomeIcon, Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { User, LogOut } from 'lucide-react';
 
 export default function Navbar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
+
+  // Kiểm tra thông tin người dùng từ localStorage khi Navbar được tải
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error('Lỗi đọc thông tin user:', err);
+      }
+    }
+  }, []);
+
+  // Hàm xử lý đăng xuất
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    navigate('/');
+    window.location.reload(); // Làm mới trang để cập nhật lại giao diện
+  };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          
-          {/* Logo & Tên Câu Lạc Bộ */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <img 
-              src="/logoclb.jpg" 
-              alt="Logo CLB" 
-              className="w-12 h-12 rounded-full object-cover border-2 border-[#800020] shadow-md group-hover:scale-105 transition-transform"
-              onError={(e) => { e.target.src = '/logoclb.jpg'; }}
-            />
-            <div>
-              <span className="block font-black text-[#800020] text-lg sm:text-xl tracking-tight uppercase">CLB Sách UNETI</span>
-              <span className="block text-xs text-slate-500 font-medium">Đại học Kinh tế - Kỹ thuật Công nghiệp</span>
+    <nav className="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        
+        {/* Logo / Tên CLB */}
+        <Link to="/" className="text-xl font-black text-[#800020] uppercase tracking-tight">
+          UNETI Book Club
+        </Link>
+
+        {/* Các liên kết menu (nếu có) */}
+        <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-700">
+          <Link to="/" className="hover:text-[#800020] transition-colors">Trang chủ</Link>
+          <Link to="/about" className="hover:text-[#800020] transition-colors">Giới thiệu</Link>
+          <Link to="/books" className="hover:text-[#800020] transition-colors">Tủ sách</Link>
+        </div>
+
+        {/* Khu vực hiển thị tài khoản */}
+        <div className="flex items-center gap-4">
+          {currentUser ? (
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl">
+              <div className="w-8 h-8 rounded-full bg-[#800020] text-white flex items-center justify-center font-bold text-xs">
+                {currentUser.hoVaTen ? currentUser.hoVaTen.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="text-left">
+                <p className="text-xs text-slate-400 font-medium leading-none">Xin chào,</p>
+                <p className="text-sm font-bold text-slate-800 leading-tight">{currentUser.hoVaTen}</p>
+              </div>
+              <button 
+                onClick={handleLogout}
+                title="Đăng xuất"
+                className="ml-2 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
-          </Link>
-
-          {/* Menu Desktop */}
-          <div className="hidden md:flex items-center gap-1 lg:gap-2">
-            <Link to="/" className="px-4 py-2 rounded-xl text-sm font-semibold text-[#800020] bg-red-50 transition-colors flex items-center gap-2">
-              <HomeIcon className="w-4 h-4" /> Trang chủ
+          ) : (
+            <Link 
+              to="/login"
+              className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2"
+            >
+              <User className="w-4 h-4" /> Đăng Nhập
             </Link>
-            <a href="#about" className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-[#800020] hover:bg-slate-50 transition-colors flex items-center gap-2">
-              <BookOpen className="w-4 h-4" /> Giới thiệu
-            </a>
-            <a href="#events" className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-[#800020] hover:bg-slate-50 transition-colors flex items-center gap-2">
-              <Calendar className="w-4 h-4" /> Sự kiện
-            </a>
-            <a href="#contact" className="ml-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#800020] hover:bg-[#600018] shadow-md hover:shadow-lg transition-all">
-              Liên hệ
-            </a>
-          </div>
-
-          {/* Nút Hamburger Menu cho Mobile */}
-          <div className="md:hidden flex items-center">
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors"
-              aria-label="Toggle Menu"
-            >
-              {isMobileMenuOpen ? <X className="w-6 h-6 text-[#800020]" /> : <Menu className="w-6 h-6 text-[#800020]" />}
-            </button>
-          </div>
-
+          )}
         </div>
+
       </div>
-
-      {/* Menu dạng Dropdown cho Mobile */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-slate-100 px-4 pt-2 pb-6 space-y-2 shadow-xl">
-          <Link 
-            to="/" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold text-[#800020] bg-red-50"
-          >
-            <HomeIcon className="w-5 h-5" /> Trang chủ
-          </Link>
-          <a 
-            href="#about" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <BookOpen className="w-5 h-5 text-[#800020]" /> Giới thiệu
-          </a>
-          <a 
-            href="#events" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Calendar className="w-5 h-5 text-[#800020]" /> Sự kiện
-          </a>
-          <div className="pt-2">
-            <a 
-              href="#contact" 
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="block text-center w-full py-3 rounded-xl font-bold text-white bg-[#800020] shadow-md"
-            >
-              Liên hệ ngay
-            </a>
-          </div>
-        </div>
-      )}
     </nav>
   );
 }
