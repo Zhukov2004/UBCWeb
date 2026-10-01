@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpen, Calendar, ArrowRight, Quote, Sparkles, Users } from 'lucide-react';
-import bgImage from '../../assets/tuyenquang.JPG';
+import bgImage from '../../assets/tuyenquang.jpg';
 
 // Import các component vừa tách
 import Navbar from '../../components/Navbar';
