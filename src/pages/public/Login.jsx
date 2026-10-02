@@ -11,19 +11,19 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-    try {
-      // Gửi yêu cầu đăng nhập đến Backend Node.js (cổng 5000)
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ msv, password })
-      });
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
+  try {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ msv, password })
+    });
       const data = await response.json();
 
       if (!response.ok) {
