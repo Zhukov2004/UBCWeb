@@ -3,7 +3,6 @@ import { BookOpen, Calendar, ArrowRight, Quote, Sparkles, Users } from 'lucide-r
 import bgImage from '../../assets/tuyenquang.jpg';
 
 // Import các component vừa tách
-import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 export default function Home() {
   // State hiệu ứng số nhảy cho phần thống kê
@@ -50,7 +49,6 @@ export default function Home() {
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-[#800020] selection:text-white">
       
       {/* Gọi Component Navbar tái sử dụng */}
-      <Navbar />
 
       {/* ================= BANNER CHÍNH & THỐNG KÊ ================= */}
       <section 

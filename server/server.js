@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
+import userRoutes from './routes/userRoutes.js'; // <-- 1. Import file route thành viên
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Khai báo Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes); // 🛠 2. BỔ SUNG DÒNG NÀY ĐỂ KÍCH HOẠT ROUTE USERS
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

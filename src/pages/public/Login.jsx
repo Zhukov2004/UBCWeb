@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, User, ArrowLeft, Loader2 } from 'lucide-react';
-import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 
 export default function Login() {
@@ -48,7 +47,6 @@ const handleLogin = async (e) => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans">
-      <Navbar />
 
       <div className="flex items-center justify-center py-16 px-4">
         <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md space-y-6">
