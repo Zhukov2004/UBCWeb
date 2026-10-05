@@ -4,11 +4,13 @@ import mongoose from 'mongoose';
 const router = express.Router();
 
 const UserSchema = new mongoose.Schema({}, { strict: false, collection: 'ubc20252026' });
-const User = mongoose.models.User || mongoose.model('User', UserSchema, 'ubc20252026');
+
+// Đổi tên Model từ 'User' thành 'UbcMember' để tránh bị dính cache trỏ nhầm sang bảng 'users' cũ
+const UbcMember = mongoose.models.UbcMember || mongoose.model('UbcMember', UserSchema, 'ubc20252026');
 
 router.get('/', async (req, res) => {
   try {
-    const rawUsers = await User.find({});
+    const rawUsers = await UbcMember.find({});
     console.log(`🔥 Đã lấy thành công ${rawUsers.length} thành viên từ collection ubc20252026`);
 
     // Map chuẩn xác các trường từ MongoDB sang định dạng Frontend yêu cầu

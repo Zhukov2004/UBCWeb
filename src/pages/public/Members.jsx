@@ -8,14 +8,15 @@ export default function Members() {
   const [error, setError] = useState('');
   const [selectedMember, setSelectedMember] = useState(null);
 
-  // Tự động nhận diện: Đang chạy ở máy cá nhân -> dùng localhost:5000, lên mạng -> dùng Render
-  const API_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000' 
-    : 'https://ubc-backend-4gtj.onrender.com';
-
   useEffect(() => {
     const fetchMembers = async () => {
       try {
+        // Tự động chọn API an toàn dựa trên hostname hiện tại của trình duyệt
+        const currentHost = window.location.hostname;
+        const API_URL = (currentHost === 'localhost' || currentHost === '127.0.0.1')
+          ? 'http://localhost:5000'
+          : 'https://ubc-backend-4gtj.onrender.com';
+
         const response = await fetch(`${API_URL}/api/users`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Không thể tải danh sách');
@@ -27,7 +28,7 @@ export default function Members() {
       }
     };
     fetchMembers();
-  }, [API_URL]);
+  }, []);
 
   const filteredMembers = members.filter(m => 
     m.hoVaTen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
