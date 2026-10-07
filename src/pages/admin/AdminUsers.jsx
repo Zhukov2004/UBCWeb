@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Users, ShieldAlert, Trash2, Search, UserCheck } from 'lucide-react';
-import { API_URL } from '../../utils/api'; // Hoặc thay bằng 'http://localhost:5000'
+
+// Tự động nhận diện môi trường ngay trong file mà không cần tạo file ngoài:
+const API_URL = 
+  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'                          // Chạy ở Local (Máy cá nhân)
+    : 'https://ubc-backend-4gtj.onrender.com';            // Thay bằng domain Backend thật của bạn khi đưa lên Host
 
 export default function AdminUsers() {
   const [accounts, setAccounts] = useState([]);
@@ -8,7 +13,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Lấy danh sách từ endpoint /api/accounts hoàn toàn mới
+  // Lấy danh sách từ endpoint /api/accounts
   const fetchAccounts = async () => {
     try {
       setLoading(true);

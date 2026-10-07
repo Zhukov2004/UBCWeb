@@ -1,57 +1,52 @@
-const express = require('express');
+import express from 'express';
+import User from '../models/User.js'; // Hoặc đường dẫn đến model User/Account của bạn
+
 const router = express.Router();
-const Account = require('../models/Account');
-// Giả định bạn có middleware xác thực admin, thay thế bằng middleware thực tế của bạn
-// const verifyAdmin = require('../middleware/verifyAdmin'); 
 
-// 1. Lấy danh sách toàn bộ Account
+// 1. Lấy danh sách tài khoản
 router.get('/', async (req, res) => {
-  try {
-    const accounts = await Account.find({}).select('-matKhau');
-    res.status(200).json(accounts);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Lỗi server khi tải danh sách account' });
-  }
+    try {
+        const accounts = await User.find().select('-password');
+        res.json(accounts);
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi server khi lấy danh sách tài khoản!' });
+    }
 });
 
-// 2. Thay đổi quyền (Role) của Account
-router.put('/:id/role', async (req, res) => {
-  try {
-    const { role } = req.body;
-    if (!['user', 'admin'].includes(role)) {
-      return res.status(400).json({ message: 'Role không hợp lệ!' });
-    }
-
-    const updatedAccount = await Account.findByIdAndUpdate(
-      req.params.id,
-      { role },
-      { new: true }
-    ).select('-matKhau');
-
-    if (!updatedAccount) {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản!' });
-    }
-
-    res.status(200).json(updatedAccount);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Lỗi khi cập nhật quyền' });
-  }
-});
-
-// 3. Xóa Account
+// 2. Xóa tài khoản
 router.delete('/:id', async (req, res) => {
-  try {
-    const deletedAccount = await Account.findByIdAndDelete(req.params.id);
-    if (!deletedAccount) {
-      return res.status(404).json({ message: 'Không tìm thấy tài khoản để xóa!' });
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Xóa tài khoản thành công!' });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi khi xóa tài khoản!' });
     }
-    res.status(200).json({ message: 'Xóa tài khoản thành công' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Lỗi khi xóa tài khoản' });
-  }
 });
 
-module.exports = router;
+// 3. Đổi quyền (Role) thành admin hoặc user
+router.put('/:id/role', async (req, res) => {
+    try {
+        const { role } = req.body;
+        
+        // Kiểm tra role gửi lên có hợp lệ không
+        if (!['admin', 'user'].includes(role)) {
+            return res.status(400).json({ message: 'Vai trò (Role) không hợp lệ!' });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id,
+            { role },
+            { new: true } // Trả về document sau khi đã update
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'Không tìm thấy tài khoản!' });
+        }
+
+        res.json(updatedUser);
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi khi cập nhật quyền tài khoản!' });
+    }
+});
+
+export default router; // Bắt buộc phải có dòng này ở cuối file
