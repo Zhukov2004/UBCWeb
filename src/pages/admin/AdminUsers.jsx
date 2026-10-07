@@ -1,211 +1,137 @@
-import React, { useState, useEffect } from 'react';
-import { Users, ShieldAlert, Trash2, Search, UserCheck } from 'lucide-react';
-
-// Tự động nhận diện môi trường ngay trong file mà không cần tạo file ngoài:
-const API_URL = 
-  window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'                          // Chạy ở Local (Máy cá nhân)
-    : 'https://ubc-backend-4gtj.onrender.com';            // Thay bằng domain Backend thật của bạn khi đưa lên Host
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function AdminUsers() {
-  const [accounts, setAccounts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+    const [accounts, setAccounts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-  // Lấy danh sách từ endpoint /api/accounts
-  const fetchAccounts = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`${API_URL}/api/accounts`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+    const fetchAccounts = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/accounts');
+            setAccounts(res.data);
+            setLoading(false);
+        } catch (err) {
+            setError('Không thể tải danh sách tài khoản!');
+            setLoading(false);
         }
-      });
+    };
 
-      if (!response.ok) {
-        throw new Error('Không thể tải danh sách tài khoản!');
-      }
+    useEffect(() => {
+        fetchAccounts();
+    }, []);
 
-      const data = await response.json();
-      setAccounts(data);
-      setError(null);
-    } catch (err) {
-      console.error(err);
-      setError('Lỗi khi kết nối đến API quản lý tài khoản mới.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  // Xóa tài khoản
-  const handleDeleteAccount = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa tài khoản này không?')) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/accounts/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    const handleDelete = async (id) => {
+        if (window.confirm('Bạn có chắc chắn muốn xóa tài khoản này không?')) {
+            try {
+                await axios.delete(`http://localhost:5000/api/accounts/${id}`);
+                setAccounts(accounts.filter(acc => acc._id !== id));
+            } catch (err) {
+                alert('Xóa tài khoản thất bại!');
+            }
         }
-      });
+    };
 
-      if (!response.ok) {
-        throw new Error('Xóa tài khoản thất bại!');
-      }
+    const handleToggleRole = async (id, currentRole) => {
+        const newRole = currentRole === 'admin' ? 'user' : 'admin';
+        try {
+            const res = await axios.put(`http://localhost:5000/api/accounts/${id}/role`, { role: newRole });
+            setAccounts(accounts.map(acc => acc._id === id ? res.data : acc));
+        } catch (err) {
+            alert('Cập nhật quyền thất bại!');
+        }
+    };
 
-      setAccounts(accounts.filter(acc => acc._id !== id));
-      alert('Đã xóa tài khoản thành công!');
-    } catch (err) {
-      console.error(err);
-      alert('Có lỗi xảy ra khi xóa tài khoản.');
-    }
-  };
+    // Hàm đặt lại mật khẩu
+    const handleResetPassword = async (id) => {
+        const newPassword = prompt('Nhập mật khẩu mới cho tài khoản này (tối thiểu 6 ký tự):');
+        if (!newPassword) return; // Nếu bấm Cancel thì thoát
 
-  // Đổi quyền (Role)
-  const handleToggleRole = async (account) => {
-    const newRole = account.role === 'admin' ? 'user' : 'admin';
+        if (newPassword.length < 6) {
+            alert('Mật khẩu quá ngắn! Phải từ 6 ký tự trở lên.');
+            return;
+        }
 
-    if (!window.confirm(`Bạn muốn đổi quyền thành [${newRole.toUpperCase()}]?`)) return;
+        try {
+            await axios.put(`http://localhost:5000/api/accounts/${id}/reset-password`, { newPassword });
+            alert('Đổi mật khẩu thành công!');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Đổi mật khẩu thất bại!');
+        }
+    };
 
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/accounts/${account._id}/role`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ role: newRole })
-      });
+    if (loading) return <div className="text-center py-10">Đang tải dữ liệu...</div>;
+    if (error) return <div className="text-center py-10 text-red-500">{error}</div>;
 
-      if (!response.ok) {
-        throw new Error('Cập nhật quyền thất bại!');
-      }
-
-      const updatedAcc = await response.json();
-      setAccounts(accounts.map(acc => acc._id === updatedAcc._id ? updatedAcc : acc));
-      alert('Cập nhật quyền thành công!');
-    } catch (err) {
-      console.error(err);
-      alert('Có lỗi xảy ra khi đổi quyền.');
-    }
-  };
-
-  // Lọc tìm kiếm theo Tên hoặc Email
-  const filteredAccounts = accounts.filter(acc => 
-    (acc.hoVaTen && acc.hoVaTen.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (acc.email && acc.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Tiêu đề */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl font-black text-[#800020] uppercase tracking-tight flex items-center gap-2">
-              <Users className="w-7 h-7" /> Quản Lý Tài Khoản (Account System)
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Hệ thống quản lý tài khoản hoàn toàn mới, độc lập và bảo mật.</p>
-          </div>
-
-          {/* Ô tìm kiếm */}
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-            <input 
-              type="text"
-              placeholder="Tìm theo tên hoặc email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#800020]/20 focus:border-[#800020] transition-all"
-            />
-          </div>
-        </div>
-
-        {/* Trạng thái */}
-        {loading && <div className="text-center py-12 text-slate-500 font-medium">Đang tải dữ liệu...</div>}
-        {error && <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm mb-6">{error}</div>}
-
-        {/* Bảng dữ liệu */}
-        {!loading && !error && (
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-400 text-xs uppercase font-bold tracking-wider">
-                    <th className="py-4 px-6">Họ và Tên</th>
-                    <th className="py-4 px-6">Email</th>
-                    <th className="py-4 px-6">Vai trò (Role)</th>
-                    <th className="py-4 px-6 text-center">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {filteredAccounts.length > 0 ? (
-                    filteredAccounts.map((account) => {
-                      const isAdmin = account.role === 'admin';
-
-                      return (
-                        <tr key={account._id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-4 px-6 font-semibold text-slate-800 flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-[#800020]/10 text-[#800020] flex items-center justify-center font-bold text-xs">
-                              {account.hoVaTen ? account.hoVaTen.charAt(0).toUpperCase() : 'A'}
-                            </div>
-                            {account.hoVaTen || 'Chưa cập nhật'}
-                          </td>
-                          <td className="py-4 px-6 text-slate-600">{account.email}</td>
-                          <td className="py-4 px-6">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                              isAdmin ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-700'
-                            }`}>
-                              {isAdmin ? <ShieldAlert className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                              {isAdmin ? 'Quản trị viên (Admin)' : 'Thành viên (User)'}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 text-center space-x-2">
-                            <button 
-                              onClick={() => handleToggleRole(account)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                isAdmin 
-                                  ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' 
-                                  : 'bg-amber-500 hover:bg-amber-600 text-white shadow-sm'
-                              }`}
-                            >
-                              {isAdmin ? 'Hạ quyền User' : 'Cấp quyền Admin'}
-                            </button>
-
-                            <button 
-                              onClick={() => handleDeleteAccount(account._id)}
-                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-all"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="text-center py-8 text-slate-400 italic">
-                        Không có tài khoản nào trong hệ thống.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+    return (
+        <div className="max-w-7xl mx-auto p-6 bg-white shadow-lg rounded-xl mt-6">
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Quản lý Tài khoản Hệ thống</h2>
+                <span className="bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full">
+                    Tổng số: {accounts.length} tài khoản
+                </span>
             </div>
-          </div>
-        )}
 
-      </div>
-    </div>
-  );
+            <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-gray-100 text-gray-700 text-sm uppercase tracking-wider">
+                            <th className="py-3 px-4">#</th>
+                            <th className="py-3 px-4">Tên / Email</th>
+                            <th className="py-3 px-4">Vai trò</th>
+                            <th className="py-3 px-4">Ngày tạo</th>
+                            <th className="py-3 px-4 text-center">Thao tác quản trị</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-sm text-gray-700">
+                        {accounts.map((acc, index) => (
+                            <tr key={acc._id} className="hover:bg-gray-50 transition">
+                                <td className="py-3 px-4 font-medium">{index + 1}</td>
+                                <td className="py-3 px-4">
+                                    <div className="font-semibold text-gray-900">{acc.username || acc.hoVaTen || 'Chưa cập nhật'}</div>
+                                    <div className="text-gray-500 text-xs">{acc.email}</div>
+                                </td>
+                                <td className="py-3 px-4">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                        acc.role === 'admin' 
+                                            ? 'bg-purple-100 text-purple-700 border border-purple-200' 
+                                            : 'bg-green-100 text-green-700 border border-green-200'
+                                    }`}>
+                                        {acc.role ? acc.role.toUpperCase() : 'USER'}
+                                    </span>
+                                </td>
+                                <td className="py-3 px-4 text-gray-500 text-xs">
+                                    {acc.createdAt ? new Date(acc.createdAt).toLocaleString('vi-VN', {
+                                        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                                    }) : 'N/A'}
+                                </td>
+                                <td className="py-3 px-4 text-center space-x-2">
+                                    <button
+                                        onClick={() => handleResetPassword(acc._id)}
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition"
+                                    >
+                                        Đổi mật khẩu
+                                    </button>
+                                    <button
+                                        onClick={() => handleToggleRole(acc._id, acc.role)}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-medium text-white transition ${
+                                            acc.role === 'admin' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'
+                                        }`}
+                                    >
+                                        {acc.role === 'admin' ? 'Hạ xuống User' : 'Nâng Admin'}
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(acc._id)}
+                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition"
+                                    >
+                                        Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 }
