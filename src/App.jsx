@@ -6,6 +6,7 @@ import Login from './pages/public/Login';
 import Members from './pages/public/Members'; // <-- Đảm bảo đã import trang Members
 import AdminMembers from './pages/admin/AdminMembers';
 import AdminUsers from './pages/admin/AdminUsers';
+import CoreTeamGenPage from './pages/CoreTeamGenPage';
 export default function App() {
   return (
     <Router>
@@ -18,6 +19,7 @@ export default function App() {
         {/* THÊM DÒNG NÀY ĐỂ KHẮC PHỤC LỖI KHỚP ROUTE */}
         <Route path="/members" element={<Members />} />
         <Route path="/admin/members" element={<AdminMembers />} />
+        <Route path="/core-team/:gen" element={<CoreTeamGenPage />} />
       </Routes>
     </Router>
   );

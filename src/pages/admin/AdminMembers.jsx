@@ -57,7 +57,7 @@ export default function AdminMembers() {
       const response = await fetch(`${getApiUrl()}/api/users`);
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Không thể tải danh sách');
-      setMembers(data);
+      setMembers(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -69,16 +69,16 @@ export default function AdminMembers() {
     fetchMembers();
   }, []);
 
-  // Trích xuất bộ lọc dropdown tự động
+  // Trích xuất bộ lọc dropdown tự động với key duy nhất
   const filterOptions = useMemo(() => {
     const bans = new Set();
     const gens = new Set();
     const khoas = new Set();
 
     members.forEach(m => {
-      if (m.ban) bans.add(m.ban);
-      if (m.gen) gens.add(m.gen);
-      if (m.khoa) khoas.add(m.khoa);
+      if (m?.ban) bans.add(m.ban);
+      if (m?.gen !== undefined && m?.gen !== null && m?.gen !== '') gens.add(m.gen);
+      if (m?.khoa) khoas.add(m.khoa);
     });
 
     return {
@@ -88,17 +88,29 @@ export default function AdminMembers() {
     };
   }, [members]);
 
-  // Lọc dữ liệu trên bảng Admin
-  const filteredMembers = members.filter(m => {
-    const matchSearch = searchTerm.trim() === '' ||
-      m.hoVaTen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.msv?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchBan = selectedBan === '' || m.ban === selectedBan;
-    const matchGen = selectedGen === '' || String(m.gen) === String(selectedGen);
-    const matchKhoa = selectedKhoa === '' || m.khoa === selectedKhoa;
+  // Lọc dữ liệu trên bảng Admin an toàn tuyệt đối, chống trắng trang
+  const filteredMembers = useMemo(() => {
+    if (!Array.isArray(members)) return [];
 
-    return matchSearch && matchBan && matchGen && matchKhoa;
-  });
+    return members.filter(m => {
+      if (!m) return false;
+
+      try {
+        const name = m.hoVaTen ? String(m.hoVaTen).toLowerCase() : '';
+        const msv = m.msv ? String(m.msv).toLowerCase() : '';
+        const term = searchTerm ? searchTerm.trim().toLowerCase() : '';
+
+        const matchSearch = term === '' || name.includes(term) || msv.includes(term);
+        const matchBan = selectedBan === '' || m.ban === selectedBan;
+        const matchGen = selectedGen === '' || String(m.gen) === String(selectedGen);
+        const matchKhoa = selectedKhoa === '' || m.khoa === selectedKhoa;
+
+        return matchSearch && matchBan && matchGen && matchKhoa;
+      } catch (e) {
+        return false;
+      }
+    });
+  }, [members, searchTerm, selectedBan, selectedGen, selectedKhoa]);
 
   // Mở modal Thêm mới
   const handleOpenAddModal = () => {
@@ -231,7 +243,7 @@ export default function AdminMembers() {
           >
             <option value="">Tất cả các Ban</option>
             {filterOptions.bans.map(ban => (
-              <option key={ban} value={ban}>Ban {ban}</option>
+              <option key={`ban-option-${ban}`} value={ban}>Ban {ban}</option>
             ))}
           </select>
 
@@ -242,7 +254,7 @@ export default function AdminMembers() {
           >
             <option value="">Tất cả các Gen</option>
             {filterOptions.gens.map(gen => (
-              <option key={gen} value={gen}>Gen {gen}</option>
+              <option key={`gen-option-${gen}`} value={gen}>Gen {gen}</option>
             ))}
           </select>
 
@@ -253,7 +265,7 @@ export default function AdminMembers() {
           >
             <option value="">Tất cả các Khoa</option>
             {filterOptions.khoas.map(khoa => (
-              <option key={khoa} value={khoa}>{khoa}</option>
+              <option key={`khoa-option-${khoa}`} value={khoa}>{khoa}</option>
             ))}
           </select>
         </div>
@@ -280,7 +292,7 @@ export default function AdminMembers() {
                 <tbody className="divide-y divide-slate-100 text-xs text-slate-700 font-medium">
                   {filteredMembers.length > 0 ? (
                     filteredMembers.map((member) => (
-                      <tr key={member._id} className="hover:bg-slate-50/80 transition-all">
+                      <tr key={member._id || member.msv} className="hover:bg-slate-50/80 transition-all">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             {member.anhThe ? (
@@ -312,7 +324,7 @@ export default function AdminMembers() {
 
                         <td className="py-3 px-4">
                           <p className="font-bold text-slate-800">{member.khoa || '---'}</p>
-                          <p className="text-[11px] text-slate-500">{member.nganh || member.Nganh || '---'} • <span className="font-semibold">{member.lop || '---'}</span></p>
+                          <p className="text-[11px] text-slate-500">{member.nganh || member.Nganh || '---'} <span className="font-semibold">{member.lop || '---'}</span></p>
                         </td>
 
                         <td className="py-3 px-4">

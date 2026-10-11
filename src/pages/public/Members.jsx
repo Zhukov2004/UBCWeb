@@ -30,7 +30,7 @@ export default function Members() {
         const response = await fetch(`${API_URL}/api/users`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || 'Không thể tải danh sách');
-        setMembers(data);
+        setMembers(Array.isArray(data) ? data : []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -48,10 +48,10 @@ export default function Members() {
     const lops = new Set();
 
     members.forEach(m => {
-      if (m.ban) bans.add(m.ban);
-      if (m.gen) gens.add(m.gen);
-      if (m.khoa) khoas.add(m.khoa);
-      if (m.lop) lops.add(m.lop);
+      if (m?.ban) bans.add(m.ban);
+      if (m?.gen !== undefined && m?.gen !== null && m?.gen !== '') gens.add(m.gen);
+      if (m?.khoa) khoas.add(m.khoa);
+      if (m?.lop) lops.add(m.lop);
     });
 
     return {
@@ -62,40 +62,49 @@ export default function Members() {
     };
   }, [members]);
 
-  // Lọc danh sách thành viên dựa trên tất cả các tiêu chí
-  const filteredMembers = members.filter(m => {
-    // 1. Tìm theo tên hoặc mã sinh viên (Hộp tìm kiếm chính)
-    const matchSearch = searchTerm.trim() === '' || 
-      m.hoVaTen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      m.msv?.toLowerCase().includes(searchTerm.toLowerCase());
+  // Lọc danh sách thành viên an toàn tuyệt đối, chống trắng trang
+  const filteredMembers = useMemo(() => {
+    if (!Array.isArray(members)) return [];
 
-    // 2. Lọc theo Ban (Menu xổ xuống)
-    const matchBan = selectedBan === '' || m.ban === selectedBan;
+    return members.filter(m => {
+      if (!m) return false;
 
-    // 3. Lọc theo Gen (Menu xổ xuống)
-    const matchGen = selectedGen === '' || String(m.gen) === String(selectedGen);
+      try {
+        const name = m.hoVaTen ? String(m.hoVaTen).toLowerCase() : '';
+        const msv = m.msv ? String(m.msv).toLowerCase() : '';
+        const term = searchTerm ? searchTerm.trim().toLowerCase() : '';
 
-    // 4. Lọc theo Khoa (Menu xổ xuống)
-    const matchKhoa = selectedKhoa === '' || m.khoa === selectedKhoa;
+        // 1. Tìm theo tên hoặc mã sinh viên
+        const matchSearch = term === '' || name.includes(term) || msv.includes(term);
 
-    // 5. Lọc theo Lớp (Menu xổ xuống)
-    const matchLop = selectedLop === '' || m.lop === selectedLop;
+        // 2. Lọc theo Ban
+        const matchBan = selectedBan === '' || m.ban === selectedBan;
 
-    // 6. Lọc theo Ngày sinh (Chọn ngày dạng YYYY-MM-DD hoặc so sánh chuỗi ngày)
-    // Lưu ý: Trường ngày sinh trong DB của bạn ví dụ là "2/11/04", ô input date trả về "YYYY-MM-DD". 
-    // Ta có thể so sánh trực tiếp hoặc kiểm tra tương đối nếu ngày tháng khớp.
-    let matchDate = true;
-    if (selectedDate) {
-      // selectedDate có dạng "YYYY-MM-DD" từ input type="date"
-      const [year, month, day] = selectedDate.split('-');
-      const formattedInputDate = `${parseInt(day)}/${parseInt(month)}/${year.slice(-2)}`; // Chuyển về dạng d/m/yy
-      const formattedInputDateFull = `${parseInt(day)}/${parseInt(month)}/${year}`;       // Chuyển về dạng d/m/yyyy
-      
-      matchDate = m.ngaySinh === formattedInputDate || m.ngaySinh === formattedInputDateFull || m.ngaySinh?.includes(`${parseInt(day)}/${parseInt(month)}`);
-    }
+        // 3. Lọc theo Gen
+        const matchGen = selectedGen === '' || String(m.gen) === String(selectedGen);
 
-    return matchSearch && matchBan && matchGen && matchKhoa && matchLop && matchDate;
-  });
+        // 4. Lọc theo Khoa
+        const matchKhoa = selectedKhoa === '' || m.khoa === selectedKhoa;
+
+        // 5. Lọc theo Lớp
+        const matchLop = selectedLop === '' || m.lop === selectedLop;
+
+        // 6. Lọc theo Ngày sinh
+        let matchDate = true;
+        if (selectedDate) {
+          const [year, month, day] = selectedDate.split('-');
+          const formattedInputDate = `${parseInt(day)}/${parseInt(month)}/${year.slice(-2)}`;
+          const formattedInputDateFull = `${parseInt(day)}/${parseInt(month)}/${year}`;
+          
+          matchDate = m.ngaySinh === formattedInputDate || m.ngaySinh === formattedInputDateFull || m.ngaySinh?.includes(`${parseInt(day)}/${parseInt(month)}`);
+        }
+
+        return matchSearch && matchBan && matchGen && matchKhoa && matchLop && matchDate;
+      } catch (e) {
+        return false;
+      }
+    });
+  }, [members, searchTerm, selectedBan, selectedGen, selectedKhoa, selectedLop, selectedDate]);
 
   // Reset về trang 1 khi thay đổi bất kỳ bộ lọc nào
   useEffect(() => {
@@ -182,7 +191,6 @@ export default function Members() {
 
           {/* Hàng 1: Ô tìm kiếm tên/mã & Chọn ngày sinh */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Hộp tìm kiếm theo Tên hoặc Mã SV */}
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                 <Search className="w-4 h-4" />
@@ -196,7 +204,6 @@ export default function Members() {
               />
             </div>
 
-            {/* Chọn ngày sinh */}
             <div className="relative flex items-center">
               <div className="w-full flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-[#800020] transition-all">
                 <Calendar className="w-4 h-4 text-slate-400 mr-3 shrink-0" />
@@ -213,9 +220,8 @@ export default function Members() {
             </div>
           </div>
 
-          {/* Hàng 2: Các Menu xổ xuống (Dropdown) */}
+          {/* Hàng 2: Các Menu xổ xuống (Dropdown) với khóa duy nhất (Key Prefix) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {/* Lọc theo Ban */}
             <select
               value={selectedBan}
               onChange={(e) => setSelectedBan(e.target.value)}
@@ -223,11 +229,10 @@ export default function Members() {
             >
               <option value="">Tất cả các Ban</option>
               {filterOptions.bans.map(ban => (
-                <option key={ban} value={ban}>Ban {ban}</option>
+                <option key={`ban-opt-${ban}`} value={ban}>Ban {ban}</option>
               ))}
             </select>
 
-            {/* Lọc theo Gen */}
             <select
               value={selectedGen}
               onChange={(e) => setSelectedGen(e.target.value)}
@@ -235,11 +240,10 @@ export default function Members() {
             >
               <option value="">Tất cả các Gen</option>
               {filterOptions.gens.map(gen => (
-                <option key={gen} value={gen}>Gen {gen}</option>
+                <option key={`gen-opt-${gen}`} value={gen}>Gen {gen}</option>
               ))}
             </select>
 
-            {/* Lọc theo Khoa */}
             <select
               value={selectedKhoa}
               onChange={(e) => setSelectedKhoa(e.target.value)}
@@ -247,11 +251,10 @@ export default function Members() {
             >
               <option value="">Tất cả các Khoa</option>
               {filterOptions.khoas.map(khoa => (
-                <option key={khoa} value={khoa}>{khoa}</option>
+                <option key={`khoa-opt-${khoa}`} value={khoa}>{khoa}</option>
               ))}
             </select>
 
-            {/* Lọc theo Lớp */}
             <select
               value={selectedLop}
               onChange={(e) => setSelectedLop(e.target.value)}
@@ -259,7 +262,7 @@ export default function Members() {
             >
               <option value="">Tất cả các Lớp</option>
               {filterOptions.lops.map(lop => (
-                <option key={lop} value={lop}>{lop}</option>
+                <option key={`lop-opt-${lop}`} value={lop}>{lop}</option>
               ))}
             </select>
           </div>
@@ -323,7 +326,7 @@ export default function Members() {
               )}
             </div>
 
-            {/* PHÂN TRANG THÔNG MINH (1 2 3 ... 17 18 19) */}
+            {/* PHÂN TRANG THÔNG MINH */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-1.5 mt-12">
                 <button
@@ -347,7 +350,7 @@ export default function Members() {
 
                     return (
                       <button
-                        key={page}
+                        key={`page-${page}`}
                         onClick={() => setCurrentPage(page)}
                         className={`w-10 h-10 rounded-xl font-bold text-sm transition cursor-pointer ${
                           currentPage === page
