@@ -5,15 +5,12 @@ const router = express.Router();
 
 const UserSchema = new mongoose.Schema({}, { strict: false, collection: 'ubc20252026' });
 
-// Đổi tên Model từ 'User' thành 'UbcMember' để tránh bị dính cache trỏ nhầm sang bảng 'users' cũ
 const UbcMember = mongoose.models.UbcMember || mongoose.model('UbcMember', UserSchema, 'ubc20252026');
 
+// 1. GET: Lấy danh sách
 router.get('/', async (req, res) => {
   try {
     const rawUsers = await UbcMember.find({});
-    console.log(`🔥 Đã lấy thành công ${rawUsers.length} thành viên từ collection ubc20252026`);
-
-    // Map chuẩn xác các trường từ MongoDB sang định dạng Frontend yêu cầu
     const formattedUsers = rawUsers.map(user => {
       const u = user.toObject();
       return {
@@ -34,8 +31,69 @@ router.get('/', async (req, res) => {
         anhSinhNhat: u['Ảnh sinh nhật'] || u.anhSinhNhat || ''
       };
     });
-
     res.json(formattedUsers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 2. POST: Thêm thành viên mới
+router.post('/', async (req, res) => {
+  try {
+    const newMemberData = {
+      'Họ và tên': req.body.hoVaTen,
+      'Mã SV': req.body.msv,
+      'Ban': req.body.ban,
+      'Ngày sinh': req.body.ngaySinh,
+      'Khoa': req.body.khoa,
+      'Lớp': req.body.lop,
+      'Gen': req.body.gen,
+      'Facebook': req.body.facebook,
+      'Mail trường': req.body.mailTruong,
+      'Quê': req.body.que,
+      'Ảnh thẻ': req.body.anhThe,
+      ...req.body
+    };
+    const newMember = new UbcMember(newMemberData);
+    await newMember.save();
+    res.status(201).json({ message: 'Thêm thành viên thành công' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 3. PUT: Cập nhật thành viên theo ID
+router.put('/:id', async (req, res) => {
+  try {
+    const updateData = {
+      'Họ và tên': req.body.hoVaTen,
+      'Mã SV': req.body.msv,
+      'Ban': req.body.ban,
+      'Ngày sinh': req.body.ngaySinh,
+      'Khoa': req.body.khoa,
+      'Lớp': req.body.lop,
+      'Gen': req.body.gen,
+      'Facebook': req.body.facebook,
+      'Mail trường': req.body.mailTruong,
+      'Quê': req.body.que,
+      'Ảnh thẻ': req.body.anhThe,
+      ...req.body
+    };
+
+    const updated = await UbcMember.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    if (!updated) return res.status(404).json({ message: 'Không tìm thấy thành viên để cập nhật' });
+    res.json({ message: 'Cập nhật thành công', data: updated });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 4. DELETE: Xóa thành viên theo ID
+router.delete('/:id', async (req, res) => {
+  try {
+    const deleted = await UbcMember.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: 'Không tìm thấy thành viên để xóa' });
+    res.json({ message: 'Đã xóa thành công' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

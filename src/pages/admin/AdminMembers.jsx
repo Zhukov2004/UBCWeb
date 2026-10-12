@@ -253,8 +253,8 @@ export default function AdminMembers() {
             className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer"
           >
             <option value="">Tất cả các Gen</option>
-            {filterOptions.gens.map(gen => (
-              <option key={`gen-option-${gen}`} value={gen}>Gen {gen}</option>
+            {filterOptions.gens.map((gen, index) => (
+              <option key={`gen-option-unique-${gen}-${index}`} value={gen}>Gen {gen}</option>
             ))}
           </select>
 

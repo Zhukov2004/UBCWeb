@@ -46,8 +46,7 @@ export default function CoreTeamGenPage() {
     fetchGenData();
   }, [gen]);
 
-  // Trích xuất các option lọc tự động từ danh sách
-  // Tự động trích xuất các option lọc an toàn tuyệt đối
+  // Trích xuất các option lọc an toàn tuyệt đối với key không bị trùng
   const filterOptions = useMemo(() => {
     const bans = new Set();
     const chucVus = new Set();
@@ -165,8 +164,8 @@ export default function CoreTeamGenPage() {
                 className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-[#800020] cursor-pointer"
               >
                 <option value="">Tất cả Chức vụ</option>
-                {filterOptions.chucVus.map(cv => (
-                  <option key={`cv-${cv}`} value={cv}>{cv}</option>
+                {filterOptions.chucVus.map((cv, idx) => (
+                  <option key={`filter-cv-${cv}-${idx}`} value={cv}>{cv}</option>
                 ))}
               </select>
 
@@ -176,8 +175,8 @@ export default function CoreTeamGenPage() {
                 className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-[#800020] cursor-pointer"
               >
                 <option value="">Tất cả Ban</option>
-                {filterOptions.bans.map(ban => (
-                  <option key={`ban-${ban}`} value={ban}>Ban {ban}</option>
+                {filterOptions.bans.map((ban, idx) => (
+                  <option key={`filter-ban-${ban}-${idx}`} value={ban}>Ban {ban}</option>
                 ))}
               </select>
 
@@ -187,8 +186,8 @@ export default function CoreTeamGenPage() {
                 className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-[#800020] cursor-pointer"
               >
                 <option value="">Tất cả Lớp</option>
-                {filterOptions.lops.map(lop => (
-                  <option key={`lop-${lop}`} value={lop}>{lop}</option>
+                {filterOptions.lops.map((lop, idx) => (
+                  <option key={`filter-lop-${lop}-${idx}`} value={lop}>{lop}</option>
                 ))}
               </select>
             </div>
@@ -200,63 +199,61 @@ export default function CoreTeamGenPage() {
 
         {/* LƯỚI HIỂN THỊ THÀNH VIÊN */}
         {!loading && !error && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {currentMembers.length > 0 ? (
-                currentMembers.map((member, idx) => {
-                  const name = member.hoVaTen || member['Họ và tên'] || 'Chưa cập nhật';
-                  const role = member.chucVu || member['Chức vụ'] || 'Thành viên BCN';
-                  const department = member.ban || member.Ban || '---';
-                  const classNameVal = member.lop || member['Lớp'] || '---';
-                  const phone = member.soDienThoai || member['Số điện thoại'] || '---';
-                  const avatar = member.anhThe || member.anh || '';
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {currentMembers.length > 0 ? (
+              currentMembers.map((member, idx) => {
+                const name = member.hoVaTen || member['Họ và tên'] || 'Chưa cập nhật';
+                const role = member.chucVu || member['Chức vụ'] || 'Thành viên BCN';
+                const department = member.ban || member.Ban || '---';
+                const classNameVal = member.lop || member['Lớp'] || '---';
+                const phone = member.soDienThoai || member['Số điện thoại'] || '---';
+                const avatar = member.anhThe || member.anh || '';
 
-                  return (
-                    <div 
-                      key={member._id || idx}
-                      className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
-                    >
-                      <div>
-                        <div className="flex items-center gap-4 mb-4">
-                          {avatar ? (
-                            <img src={avatar} alt={name} className="w-14 h-14 rounded-2xl object-cover border border-amber-100" />
-                          ) : (
-                            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-[#800020] font-black text-xl flex items-center justify-center border border-amber-100 group-hover:bg-[#800020] group-hover:text-white transition-all">
-                              {name.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-base font-bold text-slate-800 truncate">{name}</h3>
-                            <p className="text-xs font-extrabold text-[#800020] mt-0.5">{role}</p>
-                            <span className="inline-block mt-1 text-[10px] font-bold bg-red-50 text-[#800020] px-2 py-0.5 rounded border border-red-100">
-                              Ban {department}
-                            </span>
+                return (
+                  <div 
+                    key={member._id || `member-${idx}`}
+                    className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group"
+                  >
+                    <div>
+                      <div className="flex items-center gap-4 mb-4">
+                        {avatar ? (
+                          <img src={avatar} alt={name} className="w-14 h-14 rounded-2xl object-cover border border-amber-100" />
+                        ) : (
+                          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-[#800020] font-black text-xl flex items-center justify-center border border-amber-100 group-hover:bg-[#800020] group-hover:text-white transition-all">
+                            {name.charAt(0).toUpperCase()}
                           </div>
-                        </div>
-
-                        <div className="space-y-1.5 text-xs text-slate-500 mb-4 border-t border-slate-100 pt-3">
-                          <p className="flex items-center gap-2"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> Lớp: <span className="font-semibold text-slate-700">{classNameVal}</span></p>
-                          <p className="flex items-center gap-2">📞 SĐT: <span className="font-semibold text-slate-700 font-mono">{phone}</span></p>
+                        )}
+                        
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-bold text-slate-800 truncate">{name}</h3>
+                          <p className="text-xs font-extrabold text-[#800020] mt-0.5">{role}</p>
+                          <span className="inline-block mt-1 text-[10px] font-bold bg-red-50 text-[#800020] px-2 py-0.5 rounded border border-red-100">
+                            Ban {department}
+                          </span>
                         </div>
                       </div>
 
-                      <button 
-                        onClick={() => setSelectedMember(member)}
-                        className="w-full py-2 bg-slate-50 hover:bg-[#800020] hover:text-white text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200 hover:border-[#800020] cursor-pointer"
-                      >
-                        Xem chi tiết hồ sơ
-                      </button>
+                      <div className="space-y-1.5 text-xs text-slate-500 mb-4 border-t border-slate-100 pt-3">
+                        <p className="flex items-center gap-2"><BookOpen className="w-3.5 h-3.5 text-slate-400" /> Lớp: <span className="font-semibold text-slate-700">{classNameVal}</span></p>
+                        <p className="flex items-center gap-2">📞 SĐT: <span className="font-semibold text-slate-700 font-mono">{phone}</span></p>
+                      </div>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="col-span-full text-center py-16 text-slate-400 font-medium">
-                  Không tìm thấy thành viên Gen {gen} phù hợp với bộ lọc.
-                </div>
-              )}
-            </div>
-          </>
+
+                    <button 
+                      onClick={() => setSelectedMember(member)}
+                      className="w-full py-2 bg-slate-50 hover:bg-[#800020] hover:text-white text-slate-700 font-bold text-xs rounded-xl transition-all border border-slate-200 hover:border-[#800020] cursor-pointer"
+                    >
+                      Xem chi tiết hồ sơ
+                    </button>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-full text-center py-16 text-slate-400 font-medium">
+                Không tìm thấy thành viên Gen {gen} phù hợp với bộ lọc.
+              </div>
+            )}
+          </div>
         )}
 
         {/* MODAL CHI TIẾT */}
@@ -276,7 +273,7 @@ export default function CoreTeamGenPage() {
                 </div>
                 <h2 className="text-xl font-black text-slate-800">{selectedMember.hoVaTen || selectedMember['Họ và tên']}</h2>
                 <p className="text-xs font-bold text-[#800020] uppercase tracking-wider mt-1">
-                  {selectedMember.chucVu || selectedMember['Chức vụ']} • Gen {gen}
+                  {selectedMember.chucVu || selectedMember['Chức vụ']} - Gen {gen}
                 </p>
               </div>
 

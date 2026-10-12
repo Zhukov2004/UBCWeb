@@ -6,9 +6,18 @@ export default function AdminUsers() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // Hàm lấy URL API tự động theo môi trường
+    const getApiUrl = () => {
+        const currentHost = window.location.hostname;
+        return (currentHost === 'localhost' || currentHost === '127.0.0.1')
+            ? 'http://localhost:5000'
+            : 'https://ubc-backend-4gtj.onrender.com';
+    };
+
     const fetchAccounts = async () => {
         try {
-            const res = await axios.get('http://localhost:5000/api/accounts');
+            const API_URL = getApiUrl();
+            const res = await axios.get(`${API_URL}/api/accounts`);
             setAccounts(res.data);
             setLoading(false);
         } catch (err) {
@@ -24,7 +33,8 @@ export default function AdminUsers() {
     const handleDelete = async (id) => {
         if (window.confirm('Bạn có chắc chắn muốn xóa tài khoản này không?')) {
             try {
-                await axios.delete(`http://localhost:5000/api/accounts/${id}`);
+                const API_URL = getApiUrl();
+                await axios.delete(`${API_URL}/api/accounts/${id}`);
                 setAccounts(accounts.filter(acc => acc._id !== id));
             } catch (err) {
                 alert('Xóa tài khoản thất bại!');
@@ -35,7 +45,8 @@ export default function AdminUsers() {
     const handleToggleRole = async (id, currentRole) => {
         const newRole = currentRole === 'admin' ? 'user' : 'admin';
         try {
-            const res = await axios.put(`http://localhost:5000/api/accounts/${id}/role`, { role: newRole });
+            const API_URL = getApiUrl();
+            const res = await axios.put(`${API_URL}/api/accounts/${id}/role`, { role: newRole });
             setAccounts(accounts.map(acc => acc._id === id ? res.data : acc));
         } catch (err) {
             alert('Cập nhật quyền thất bại!');
@@ -53,7 +64,8 @@ export default function AdminUsers() {
         }
 
         try {
-            await axios.put(`http://localhost:5000/api/accounts/${id}/reset-password`, { newPassword });
+            const API_URL = getApiUrl();
+            await axios.put(`${API_URL}/api/accounts/${id}/reset-password`, { newPassword });
             alert('Đổi mật khẩu thành công!');
         } catch (err) {
             alert(err.response?.data?.message || 'Đổi mật khẩu thất bại!');
@@ -108,13 +120,13 @@ export default function AdminUsers() {
                                 <td className="py-3 px-4 text-center space-x-2">
                                     <button
                                         onClick={() => handleResetPassword(acc._id)}
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer"
                                     >
                                         Đổi mật khẩu
                                     </button>
                                     <button
                                         onClick={() => handleToggleRole(acc._id, acc.role)}
-                                        className={`px-3 py-1.5 rounded-md text-xs font-medium text-white transition ${
+                                        className={`px-3 py-1.5 rounded-md text-xs font-medium text-white transition cursor-pointer ${
                                             acc.role === 'admin' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700'
                                         }`}
                                     >
@@ -122,7 +134,7 @@ export default function AdminUsers() {
                                     </button>
                                     <button
                                         onClick={() => handleDelete(acc._id)}
-                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition"
+                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-xs font-medium transition cursor-pointer"
                                     >
                                         Xóa
                                     </button>
