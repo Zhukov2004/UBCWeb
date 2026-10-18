@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/userRoutes.js'; // <-- 1. Import file route thành viên
 import accountRoutes from './routes/accountRoutes.js';
+import profileRoutes from './routes/profile.js';
+
 dotenv.config();
 
 const app = express();
@@ -20,6 +22,8 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes); // 🛠 2. BỔ SUNG DÒNG NÀY ĐỂ KÍCH HOẠT ROUTE USERS
 app.use('/api/accounts', accountRoutes);
+app.use('/uploads', express.static('uploads'));
+app.use('/api/profile', profileRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Backend Server đang chạy tại http://localhost:${PORT}`);

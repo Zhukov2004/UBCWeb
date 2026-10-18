@@ -67,7 +67,9 @@ export default function Navbar() {
     window.location.reload();
   };
 
-  const isAdmin = currentUser && currentUser.role === 'admin';
+  // KIỂM TRA QUYỀN: Hỗ trợ cả 'admin' và 'superadmin' (Không phân biệt chữ hoa/thường)
+  const userRole = currentUser?.role?.toLowerCase() || '';
+  const isAdminOrSuperAdmin = userRole === 'admin' || userRole === 'superadmin';
 
   return (
     <nav className="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-50">
@@ -153,14 +155,20 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* MENU XỔ XUỐNG: QUẢN TRỊ ADMIN */}
-          {isAdmin && (
+          {/* MENU XỔ XUỐNG: QUẢN TRỊ ADMIN / SUPER ADMIN */}
+          {isAdminOrSuperAdmin && (
             <div className="relative" ref={adminRef}>
               <button
                 onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-all cursor-pointer"
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer ${
+                  userRole === 'superadmin' 
+                    ? 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100' 
+                    : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                }`}
               >
-                <ShieldAlert className="w-4 h-4 text-amber-600" /> Quản trị <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
+                <ShieldAlert className={`w-4 h-4 ${userRole === 'superadmin' ? 'text-purple-600' : 'text-amber-600'}`} /> 
+                {userRole === 'superadmin' ? 'Quản trị Tối cao' : 'Quản trị'} 
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isAdminDropdownOpen && (
@@ -187,13 +195,22 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           {currentUser ? (
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl">
-              <div className="w-8 h-8 rounded-full bg-[#800020] text-white flex items-center justify-center font-bold text-xs">
-                {currentUser.hoVaTen ? currentUser.hoVaTen.charAt(0).toUpperCase() : 'U'}
-              </div>
-              <div className="text-left">
-                <p className="text-xs text-slate-400 font-medium leading-none">Xin chào,</p>
-                <p className="text-sm font-bold text-slate-800 leading-tight">{currentUser.hoVaTen}</p>
-              </div>
+              
+              {/* 👉 Bọc Link chuyển thẳng tới trang /profile */}
+              <Link to="/profile" className="flex items-center gap-3 hover:opacity-80 transition cursor-pointer group">
+                <div className="w-8 h-8 rounded-full bg-[#800020] text-white flex items-center justify-center font-bold text-xs shadow-sm group-hover:scale-105 transition-transform">
+                  {currentUser.hoVaTen ? currentUser.hoVaTen.charAt(0).toUpperCase() : (currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U')}
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] text-slate-400 font-semibold leading-none group-hover:text-[#800020]">
+                    ⚙️ Sửa thông tin cá nhân
+                  </p>
+                  <p className="text-sm font-bold text-slate-800 leading-tight">
+                    {currentUser.hoVaTen || currentUser.username || 'Thành viên'}
+                  </p>
+                </div>
+              </Link>
+
               <button 
                 onClick={handleLogout}
                 title="Đăng xuất"

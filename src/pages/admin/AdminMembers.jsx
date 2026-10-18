@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Edit3, Trash2, X, ShieldAlert, Award, BookOpen, MapPin, Calendar, Filter } from 'lucide-react';
+import { Search, Plus, Edit3, Trash2, X, ShieldAlert, Award, BookOpen, MapPin, Calendar, Upload } from 'lucide-react';
 
 export default function AdminMembers() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // State xem chi tiết thông tin dạng thẻ
+  const [viewingMember, setViewingMember] = useState(null);
 
   // States cho tìm kiếm & lọc
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,6 +20,10 @@ export default function AdminMembers() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentMemberId, setCurrentMemberId] = useState(null);
+
+  // States quản lý File ảnh tải lên & xem trước
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   // Form data cho Thêm / Sửa
   const initialFormState = {
@@ -50,6 +57,13 @@ export default function AdminMembers() {
       : 'https://ubc-backend-4gtj.onrender.com';
   };
 
+  // Hàm xử lý đường dẫn Avatar an toàn (Hỗ trợ cả link ngoài & file upload local)
+  const getMemberAvatar = (anhThe) => {
+    if (!anhThe) return null;
+    if (anhThe.startsWith('http')) return anhThe; 
+    return `${getApiUrl()}${anhThe}`; 
+  };
+
   // Lấy danh sách thành viên
   const fetchMembers = async () => {
     try {
@@ -68,6 +82,15 @@ export default function AdminMembers() {
   useEffect(() => {
     fetchMembers();
   }, []);
+
+  // Xử lý chọn File ảnh từ máy tính/điện thoại
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file)); 
+    }
+  };
 
   // Trích xuất bộ lọc dropdown tự động với key duy nhất
   const filterOptions = useMemo(() => {
@@ -88,7 +111,7 @@ export default function AdminMembers() {
     };
   }, [members]);
 
-  // Lọc dữ liệu trên bảng Admin an toàn tuyệt đối, chống trắng trang
+  // Lọc dữ liệu trên bảng Admin an toàn tuyệt đối
   const filteredMembers = useMemo(() => {
     if (!Array.isArray(members)) return [];
 
@@ -117,6 +140,8 @@ export default function AdminMembers() {
     setIsEditing(false);
     setCurrentMemberId(null);
     setFormData(initialFormState);
+    setSelectedFile(null);
+    setPreviewUrl('');
     setIsModalOpen(true);
   };
 
@@ -142,10 +167,12 @@ export default function AdminMembers() {
       hoVaTen: member.hoVaTen || '',
       anhSinhNhat: member.anhSinhNhat || ''
     });
+    setSelectedFile(null);
+    setPreviewUrl('');
     setIsModalOpen(true);
   };
 
-  // Xử lý Submit Form (Thêm hoặc Sửa)
+  // Xử lý Submit Form (Thêm hoặc Sửa) với FormData
   const handleSubmitForm = async (e) => {
     e.preventDefault();
     try {
@@ -155,10 +182,28 @@ export default function AdminMembers() {
       
       const method = isEditing ? 'PUT' : 'POST';
 
+      const data = new FormData();
+      data.append('hoVaTen', formData.hoVaTen);
+      data.append('msv', formData.msv);
+      data.append('gen', formData.gen);
+      data.append('ban', formData.ban);
+      data.append('khoa', formData.khoa);
+      data.append('nganh', formData.nganh);
+      data.append('lop', formData.lop);
+      data.append('ngaySinh', formData.ngaySinh);
+      data.append('que', formData.que);
+      data.append('mailTruong', formData.mailTruong);
+      data.append('facebook', formData.facebook);
+
+      if (selectedFile) {
+        data.append('anhThe', selectedFile);
+      } else {
+        data.append('anhThe', formData.anhThe);
+      }
+
       const response = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: data 
       });
 
       const result = await response.json();
@@ -295,13 +340,24 @@ export default function AdminMembers() {
                       <tr key={member._id || member.msv} className="hover:bg-slate-50/80 transition-all">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            {member.anhThe ? (
-                              <img src={member.anhThe} alt="" className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0" />
-                            ) : (
-                              <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#800020] font-bold flex items-center justify-center shrink-0">
-                                {member.hoVaTen?.charAt(0)}
+                            <div className="relative w-10 h-10 shrink-0">
+                              {getMemberAvatar(member.anhThe) && (
+                                <img 
+                                  src={getMemberAvatar(member.anhThe)} 
+                                  alt="" 
+                                  onError={(e) => { 
+                                    e.target.style.display = 'none'; 
+                                    if (e.target.nextSibling) {
+                                      e.target.nextSibling.style.display = 'flex';
+                                    }
+                                  }}
+                                  className="w-10 h-10 rounded-xl object-cover border border-slate-200 absolute inset-0 z-10" 
+                                />
+                              )}
+                              <div className="w-10 h-10 rounded-xl bg-amber-50 text-[#800020] font-bold flex items-center justify-center border border-amber-200">
+                                {member.hoVaTen?.charAt(0)?.toUpperCase() || 'U'}
                               </div>
-                            )}
+                            </div>
                             <div>
                               <p className="font-bold text-slate-900">{member.hoVaTen}</p>
                               <p className="text-[11px] text-slate-400 font-mono">{member.mailTruong || 'Chưa có email'}</p>
@@ -335,12 +391,21 @@ export default function AdminMembers() {
                         <td className="py-3 px-4 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button
+                              onClick={() => setViewingMember(member)}
+                              className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition cursor-pointer"
+                              title="Xem chi tiết"
+                            >
+                              <BookOpen className="w-4 h-4" />
+                            </button>
+
+                            <button
                               onClick={() => handleOpenEditModal(member)}
                               className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl transition cursor-pointer"
                               title="Sửa thông tin"
                             >
                               <Edit3 className="w-4 h-4" />
                             </button>
+
                             <button
                               onClick={() => setDeleteConfirmId(member._id)}
                               className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition cursor-pointer"
@@ -381,6 +446,37 @@ export default function AdminMembers() {
               </h2>
 
               <form onSubmit={handleSubmitForm} className="space-y-4">
+                
+                {/* Khu vực chọn ảnh từ thiết bị / máy tính */}
+                <div className="sm:col-span-2 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <label className="block text-xs font-bold text-slate-700 mb-2">Ảnh thẻ thành viên</label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-14 h-14 shrink-0">
+                      {(previewUrl || getMemberAvatar(formData.anhThe)) && (
+                        <img 
+                          src={previewUrl || getMemberAvatar(formData.anhThe)} 
+                          alt="Preview" 
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                          className="w-14 h-14 rounded-2xl object-cover border-2 border-[#800020] shadow-sm absolute inset-0 z-10"
+                        />
+                      )}
+                      <div className="w-14 h-14 rounded-2xl bg-amber-50 text-[#800020] font-black text-xl flex items-center justify-center border-2 border-amber-200">
+                        {formData.hoVaTen?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                    </div>
+                    <label className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition cursor-pointer shadow-sm">
+                      <Upload className="w-4 h-4 text-[#800020]" />
+                      <span>{selectedFile ? selectedFile.name : 'Chọn ảnh từ điện thoại / máy tính'}</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                      />
+                    </label>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">Họ và tên *</label>
@@ -505,17 +601,6 @@ export default function AdminMembers() {
                       placeholder="https://www.facebook.com/..."
                     />
                   </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Link ảnh thẻ (URL hình ảnh)</label>
-                    <input
-                      type="text"
-                      value={formData.anhThe}
-                      onChange={(e) => setFormData({...formData, anhThe: e.target.value})}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-[#800020] outline-none"
-                      placeholder="https://..."
-                    />
-                  </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
@@ -561,6 +646,113 @@ export default function AdminMembers() {
                   Xoá ngay
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Xem Chi Tiết Dạng Thẻ */}
+        {viewingMember && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl relative border border-slate-100">
+              
+              <button
+                onClick={() => setViewingMember(null)}
+                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 rounded-full bg-slate-100/80 hover:bg-slate-200 transition z-10 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="bg-gradient-to-r from-[#800020] to-[#500010] p-6 text-white text-center relative">
+                <div className="relative w-24 h-24 mx-auto mb-3">
+                  {getMemberAvatar(viewingMember.anhThe) && (
+                    <img 
+                      src={getMemberAvatar(viewingMember.anhThe)} 
+                      alt="" 
+                      onError={(e) => { 
+                        e.target.style.display = 'none'; 
+                        if (e.target.nextSibling) {
+                          e.target.nextSibling.style.display = 'flex';
+                        }
+                      }}
+                      className="w-24 h-24 rounded-2xl object-cover border-4 border-white/20 shadow-lg bg-white absolute inset-0 z-10" 
+                    />
+                  )}
+                  <div className="w-24 h-24 rounded-2xl bg-amber-50 text-[#800020] font-black text-3xl flex items-center justify-center border-4 border-white/20 shadow-lg">
+                    {viewingMember.hoVaTen?.charAt(0)?.toUpperCase() || 'U'}
+                  </div>
+                </div>
+                <h3 className="text-xl font-black">{viewingMember.hoVaTen}</h3>
+                <p className="text-xs text-amber-200 font-mono mt-0.5">{viewingMember.mailTruong || 'Chưa cập nhật email'}</p>
+                
+                <div className="flex justify-center gap-2 mt-3">
+                  <span className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-bold border border-white/20">
+                    Gen {viewingMember.gen || '---'}
+                  </span>
+                  <span className="px-3 py-1 bg-amber-400 text-slate-900 rounded-full text-xs font-bold">
+                    Ban {viewingMember.ban || '---'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-3.5 text-xs">
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                  <div>
+                    <span className="text-slate-400 block font-medium">Mã sinh viên (MSV)</span>
+                    <span className="font-bold text-slate-800 font-mono text-sm">{viewingMember.msv || '---'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block font-medium">Ngày sinh</span>
+                    <span className="font-bold text-slate-800 flex items-center gap-1 mt-0.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#800020]" /> {viewingMember.ngaySinh || '---'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-2">
+                  <div>
+                    <span className="text-slate-400 block font-medium">Khoa / Ngành</span>
+                    <span className="font-bold text-slate-800">{viewingMember.khoa || '---'} {viewingMember.nganh ? `- ${viewingMember.nganh}` : ''}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block font-medium">Lớp học</span>
+                    <span className="font-bold text-slate-800 font-mono">{viewingMember.lop || '---'}</span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-2">
+                  <div>
+                    <span className="text-slate-400 block font-medium">Quê quán</span>
+                    <span className="font-bold text-slate-800 flex items-center gap-1 mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 text-rose-600" /> {viewingMember.que || '---'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block font-medium">Facebook cá nhân</span>
+                    {viewingMember.facebook ? (
+                      <a 
+                        href={viewingMember.facebook} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="font-bold text-blue-600 hover:underline truncate block mt-0.5"
+                      >
+                        {viewingMember.facebook}
+                      </a>
+                    ) : (
+                      <span className="font-bold text-slate-400">Không có</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 pb-6 pt-2 flex justify-end">
+                <button
+                  onClick={() => setViewingMember(null)}
+                  className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Đóng cửa sổ
+                </button>
+              </div>
+
             </div>
           </div>
         )}
