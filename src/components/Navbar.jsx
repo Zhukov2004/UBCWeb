@@ -4,6 +4,7 @@ import { User, LogOut, Users, ShieldAlert, ChevronDown, Award, Settings, UserChe
 
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState('');
   
   // States điều khiển hiển thị Menu xổ xuống (Dropdown)
   const [isMembersDropdownOpen, setIsMembersDropdownOpen] = useState(false);
@@ -17,18 +18,54 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
 
-  // Đọc user từ localStorage
+  const getApiUrl = () => {
+    const currentHost = window.location.hostname;
+    return (currentHost === 'localhost' || currentHost === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://ubc-backend-4gtj.onrender.com';
+  };
+
+  const getMemberAvatar = (anhThe) => {
+    if (!anhThe) return null;
+    if (anhThe.startsWith('http')) return anhThe;
+    return `${getApiUrl()}${anhThe}`;
+  };
+
+  // Đọc user từ localStorage và fetch thêm ảnh đại diện mới nhất (Đã tối ưu chống lỗi 404 triệt để)
   const checkUser = () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setCurrentUser(JSON.parse(storedUser));
+        const userObj = JSON.parse(storedUser);
+        setCurrentUser(userObj);
+
+        // Gọi API lấy thông tin profile chi tiết để đồng bộ avatar
+        const userId = userObj._id || userObj.id;
+        if (userId) {
+          fetch(`${getApiUrl()}/api/profile/me/${userId}`)
+            .then(res => {
+              if (!res.ok) {
+                return null; // Bỏ qua nếu server phản hồi lỗi
+              }
+              return res.json();
+            })
+            .then(data => {
+              if (data && (data['Ảnh thẻ'] || data.anhThe)) {
+                setAvatarUrl(getMemberAvatar(data['Ảnh thẻ'] || data.anhThe));
+              }
+            })
+            .catch(() => {
+              // Bắt lỗi ngầm, không in lỗi đỏ ra console
+            });
+        }
       } catch (err) {
         console.error('Lỗi đọc thông tin user:', err);
         setCurrentUser(null);
+        setAvatarUrl('');
       }
     } else {
       setCurrentUser(null);
+      setAvatarUrl('');
     }
   };
 
@@ -63,6 +100,7 @@ export default function Navbar() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setCurrentUser(null);
+    setAvatarUrl('');
     navigate('/');
     window.location.reload();
   };
@@ -196,11 +234,21 @@ export default function Navbar() {
           {currentUser ? (
             <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl">
               
-              {/* 👉 Bọc Link chuyển thẳng tới trang /profile */}
+              {/* Link chuyển thẳng tới trang /profile kèm Avatar đồng bộ */}
               <Link to="/profile" className="flex items-center gap-3 hover:opacity-80 transition cursor-pointer group">
-                <div className="w-8 h-8 rounded-full bg-[#800020] text-white flex items-center justify-center font-bold text-xs shadow-sm group-hover:scale-105 transition-transform">
-                  {currentUser.hoVaTen ? currentUser.hoVaTen.charAt(0).toUpperCase() : (currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U')}
-                </div>
+                {avatarUrl ? (
+                  <img 
+                    src={avatarUrl} 
+                    alt="Avatar" 
+                    onError={() => setAvatarUrl('')}
+                    className="w-8 h-8 rounded-full object-cover border border-[#800020] shadow-sm group-hover:scale-105 transition-transform"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-[#800020] text-white flex items-center justify-center font-bold text-xs shadow-sm group-hover:scale-105 transition-transform">
+                    {currentUser.hoVaTen ? currentUser.hoVaTen.charAt(0).toUpperCase() : (currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U')}
+                  </div>
+                )}
+                
                 <div className="text-left">
                   <p className="text-[10px] text-slate-400 font-semibold leading-none group-hover:text-[#800020]">
                     ⚙️ Sửa thông tin cá nhân
