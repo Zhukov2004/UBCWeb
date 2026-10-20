@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, LogOut, Users, ShieldAlert, ChevronDown, Award, Settings, UserCheck } from 'lucide-react';
+import { User, LogOut, Users, ShieldAlert, ChevronDown, Award, Settings, UserCheck, Edit3 } from 'lucide-react';
 
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -8,13 +8,13 @@ export default function Navbar() {
   
   // States điều khiển hiển thị Menu xổ xuống (Dropdown)
   const [isMembersDropdownOpen, setIsMembersDropdownOpen] = useState(false);
-  const [isAdminDropdownOpen, setIsAdminDropdownOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const membersRef = useRef(null);
-  const adminRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   const isActive = (path) => location.pathname === path;
 
@@ -31,7 +31,7 @@ export default function Navbar() {
     return `${getApiUrl()}${anhThe}`;
   };
 
-  // Đọc user từ localStorage và fetch thêm ảnh đại diện mới nhất (Đã tối ưu chống lỗi 404 triệt để)
+  // Đọc user từ localStorage và fetch thêm ảnh đại diện mới nhất
   const checkUser = () => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -39,14 +39,11 @@ export default function Navbar() {
         const userObj = JSON.parse(storedUser);
         setCurrentUser(userObj);
 
-        // Gọi API lấy thông tin profile chi tiết để đồng bộ avatar
         const userId = userObj._id || userObj.id;
         if (userId) {
           fetch(`${getApiUrl()}/api/profile/me/${userId}`)
             .then(res => {
-              if (!res.ok) {
-                return null; // Bỏ qua nếu server phản hồi lỗi
-              }
+              if (!res.ok) return null;
               return res.json();
             })
             .then(data => {
@@ -54,9 +51,7 @@ export default function Navbar() {
                 setAvatarUrl(getMemberAvatar(data['Ảnh thẻ'] || data.anhThe));
               }
             })
-            .catch(() => {
-              // Bắt lỗi ngầm, không in lỗi đỏ ra console
-            });
+            .catch(() => {});
         }
       } catch (err) {
         console.error('Lỗi đọc thông tin user:', err);
@@ -81,8 +76,8 @@ export default function Navbar() {
       if (membersRef.current && !membersRef.current.contains(event.target)) {
         setIsMembersDropdownOpen(false);
       }
-      if (adminRef.current && !adminRef.current.contains(event.target)) {
-        setIsAdminDropdownOpen(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -92,7 +87,7 @@ export default function Navbar() {
   // Đóng dropdown khi đổi trang
   useEffect(() => {
     setIsMembersDropdownOpen(false);
-    setIsAdminDropdownOpen(false);
+    setIsUserDropdownOpen(false);
   }, [location.pathname]);
 
   // Đăng xuất
@@ -105,7 +100,7 @@ export default function Navbar() {
     window.location.reload();
   };
 
-  // KIỂM TRA QUYỀN: Hỗ trợ cả 'admin' và 'superadmin' (Không phân biệt chữ hoa/thường)
+  // KIỂM TRA QUYỀN
   const userRole = currentUser?.role?.toLowerCase() || '';
   const isAdminOrSuperAdmin = userRole === 'admin' || userRole === 'superadmin';
 
@@ -162,7 +157,7 @@ export default function Navbar() {
             </button>
 
             {isMembersDropdownOpen && (
-              <div className="absolute top-full left-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute top-full left-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50">
                 <Link 
                   to="/members" 
                   className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#800020] transition-colors"
@@ -192,80 +187,95 @@ export default function Navbar() {
               </div>
             )}
           </div>
-
-          {/* MENU XỔ XUỐNG: QUẢN TRỊ ADMIN / SUPER ADMIN */}
-          {isAdminOrSuperAdmin && (
-            <div className="relative" ref={adminRef}>
-              <button
-                onClick={() => setIsAdminDropdownOpen(!isAdminDropdownOpen)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer ${
-                  userRole === 'superadmin' 
-                    ? 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100' 
-                    : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                }`}
-              >
-                <ShieldAlert className={`w-4 h-4 ${userRole === 'superadmin' ? 'text-purple-600' : 'text-amber-600'}`} /> 
-                {userRole === 'superadmin' ? 'Quản trị Tối cao' : 'Quản trị'} 
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAdminDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isAdminDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <Link 
-                    to="/admin/members" 
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#800020] transition-colors"
-                  >
-                    <Settings className="w-4 h-4 text-amber-600" /> Quản lý Thành viên
-                  </Link>
-                  <Link 
-                    to="/admin/users" 
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#800020] transition-colors"
-                  >
-                    <UserCheck className="w-4 h-4 text-indigo-600" /> Quản lý Tài khoản
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Khu vực hiển thị tài khoản cá nhân / Đăng nhập */}
+        {/* Khu vực hiển thị tài khoản cá nhân / Đăng nhập (Gộp Quản trị vào đây) */}
         <div className="flex items-center gap-4">
           {currentUser ? (
-            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl">
+            <div className="relative" ref={userMenuRef}>
               
-              {/* Link chuyển thẳng tới trang /profile kèm Avatar đồng bộ */}
-              <Link to="/profile" className="flex items-center gap-3 hover:opacity-80 transition cursor-pointer group">
+              {/* Nút bấm mở Dropdown User */}
+              <button 
+                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                className="flex items-center gap-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-2xl transition cursor-pointer"
+              >
                 {avatarUrl ? (
                   <img 
                     src={avatarUrl} 
                     alt="Avatar" 
                     onError={() => setAvatarUrl('')}
-                    className="w-8 h-8 rounded-full object-cover border border-[#800020] shadow-sm group-hover:scale-105 transition-transform"
+                    className="w-8 h-8 rounded-full object-cover border border-[#800020] shadow-sm"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-[#800020] text-white flex items-center justify-center font-bold text-xs shadow-sm group-hover:scale-105 transition-transform">
+                  <div className="w-8 h-8 rounded-full bg-[#800020] text-white flex items-center justify-center font-bold text-xs shadow-sm">
                     {currentUser.hoVaTen ? currentUser.hoVaTen.charAt(0).toUpperCase() : (currentUser.username ? currentUser.username.charAt(0).toUpperCase() : 'U')}
                   </div>
                 )}
                 
-                <div className="text-left">
-                  <p className="text-[10px] text-slate-400 font-semibold leading-none group-hover:text-[#800020]">
-                    ⚙️ Sửa thông tin cá nhân
-                  </p>
-                  <p className="text-sm font-bold text-slate-800 leading-tight">
+                <div className="text-left hidden sm:block">
+                  <p className="text-xs font-bold text-slate-800 leading-tight">
                     {currentUser.hoVaTen || currentUser.username || 'Thành viên'}
                   </p>
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                    {userRole === 'superadmin' ? '⚡ Quản trị viên chính' : userRole === 'admin' ? '🛡️ Quản trị viên' : 'Thành viên'}
+                  </p>
                 </div>
-              </Link>
-
-              <button 
-                onClick={handleLogout}
-                title="Đăng xuất"
-                className="ml-2 p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
+                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
+
+              {/* MENU XỔ XUỐNG CỦA USER (Tích hợp cả Sửa thông tin, Quản trị & Đăng xuất) */}
+              {isUserDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  
+                  {/* Thông tin nhanh */}
+                  <div className="px-4 py-2 border-b border-slate-100 sm:hidden">
+                    <p className="text-xs font-bold text-slate-800">{currentUser.hoVaTen || currentUser.username}</p>
+                    <p className="text-[10px] text-slate-400 uppercase">{userRole || 'Thành viên'}</p>
+                  </div>
+
+                  {/* Sửa thông tin */}
+                  <Link 
+                    to="/profile" 
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#800020] transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4 text-[#800020]" /> Sửa thông tin cá nhân
+                  </Link>
+
+                  {/* KHU VỰC QUẢN TRỊ (Chỉ hiện khi là admin hoặc superadmin) */}
+                  {isAdminOrSuperAdmin && (
+                    <>
+                      <div className="my-1 border-t border-slate-100"></div>
+                      <div className="px-4 py-1 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Khu vực Quản trị</div>
+                      
+                      <Link 
+                        to="/admin/members" 
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-amber-600" /> Quản lý Thành viên
+                      </Link>
+                      
+                      <Link 
+                        to="/admin/users" 
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                      >
+                        <UserCheck className="w-4 h-4 text-indigo-600" /> Quản lý Tài khoản
+                      </Link>
+                    </>
+                  )}
+
+                  <div className="my-1 border-t border-slate-100"></div>
+
+                  {/* Đăng xuất */}
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left"
+                  >
+                    <LogOut className="w-4 h-4" /> Đăng xuất tài khoản
+                  </button>
+
+                </div>
+              )}
+
             </div>
           ) : (
             <Link 
