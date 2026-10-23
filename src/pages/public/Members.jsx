@@ -41,6 +41,7 @@ export default function Members() {
   }, []);
 
   // Tự động trích xuất các giá trị độc lập từ dữ liệu để đưa vào danh sách menu xổ xuống (Dropdown)
+  // Tự động trích xuất và chuẩn hóa các giá trị độc lập từ dữ liệu để đưa vào danh sách menu xổ xuống (Dropdown)
   const filterOptions = useMemo(() => {
     const bans = new Set();
     const gens = new Set();
@@ -49,14 +50,18 @@ export default function Members() {
 
     members.forEach(m => {
       if (m?.ban) bans.add(m.ban);
-      if (m?.gen !== undefined && m?.gen !== null && m?.gen !== '') gens.add(m.gen);
+      if (m?.gen !== undefined && m?.gen !== null && m?.gen !== '') {
+        // Chuẩn hóa chuỗi hoặc số để gom nhóm các gen trùng dạng như "3" và 3
+        const cleanGen = String(m.gen).replace(/^gen\s*/i, '').trim();
+        if (cleanGen) gens.add(cleanGen);
+      }
       if (m?.khoa) khoas.add(m.khoa);
       if (m?.lop) lops.add(m.lop);
     });
 
     return {
       bans: Array.from(bans).sort(),
-      gens: Array.from(gens).sort((a, b) => Number(a) - Number(b)), // Sắp xếp Gen tăng dần
+      gens: Array.from(gens).sort((a, b) => Number(a) - Number(b)), // Sắp xếp Gen tăng dần chuẩn xác
       khoas: Array.from(khoas).sort(),
       lops: Array.from(lops).sort(),
     };
@@ -222,50 +227,50 @@ export default function Members() {
 
           {/* Hàng 2: Các Menu xổ xuống (Dropdown) với khóa duy nhất (Key Prefix) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <select
-              value={selectedBan}
-              onChange={(e) => setSelectedBan(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer"
-            >
-              <option value="">Tất cả các Ban</option>
-              {filterOptions.bans.map(ban => (
-                <option key={`ban-opt-${ban}`} value={ban}>Ban {ban}</option>
-              ))}
-            </select>
+  <select
+    value={selectedBan}
+    onChange={(e) => setSelectedBan(e.target.value)}
+    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer overflow-hidden"
+  >
+    <option value="">Tất cả các Ban</option>
+    {filterOptions.bans.map(ban => (
+      <option key={`ban-opt-${ban}`} value={ban}>Ban {ban}</option>
+    ))}
+  </select>
 
-            <select
-              value={selectedGen}
-              onChange={(e) => setSelectedGen(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer"
-            >
-              <option value="">Tất cả các Gen</option>
-              {filterOptions.gens.map(gen => (
-                <option key={`gen-opt-${gen}`} value={gen}>Gen {gen}</option>
-              ))}
-            </select>
+  <select
+    value={selectedGen}
+    onChange={(e) => setSelectedGen(e.target.value)}
+    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer overflow-hidden"
+  >
+    <option value="">Tất cả các Gen</option>
+    {filterOptions.gens.map((gen, index) => (
+      <option key={`unique-gen-${gen}-${index}`} value={gen}>Gen {gen}</option>
+    ))}
+  </select>
 
-            <select
-              value={selectedKhoa}
-              onChange={(e) => setSelectedKhoa(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer"
-            >
-              <option value="">Tất cả các Khoa</option>
-              {filterOptions.khoas.map(khoa => (
-                <option key={`khoa-opt-${khoa}`} value={khoa}>{khoa}</option>
-              ))}
-            </select>
+  <select
+    value={selectedKhoa}
+    onChange={(e) => setSelectedKhoa(e.target.value)}
+    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer overflow-hidden"
+  >
+    <option value="">Tất cả các Khoa</option>
+    {filterOptions.khoas.map(khoa => (
+      <option key={`khoa-opt-${khoa}`} value={khoa}>{khoa}</option>
+    ))}
+  </select>
 
-            <select
-              value={selectedLop}
-              onChange={(e) => setSelectedLop(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer"
-            >
-              <option value="">Tất cả các Lớp</option>
-              {filterOptions.lops.map(lop => (
-                <option key={`lop-opt-${lop}`} value={lop}>{lop}</option>
-              ))}
-            </select>
-          </div>
+  <select
+    value={selectedLop}
+    onChange={(e) => setSelectedLop(e.target.value)}
+    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#800020] cursor-pointer overflow-hidden"
+  >
+    <option value="">Tất cả các Lớp</option>
+    {filterOptions.lops.map(lop => (
+      <option key={`lop-opt-${lop}`} value={lop}>{lop}</option>
+    ))}
+  </select>
+</div>
         </div>
 
         {loading && <div className="text-center py-20 text-slate-500 font-medium">Đang tải danh sách thành viên...</div>}

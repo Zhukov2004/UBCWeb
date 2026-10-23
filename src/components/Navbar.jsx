@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { User, LogOut, Users, ShieldAlert, ChevronDown, Award, Settings, UserCheck, Edit3 } from 'lucide-react';
+import { User, LogOut, Users, ShieldAlert, ChevronDown, Award, Settings, UserCheck, Edit3, Calendar } from 'lucide-react';
 
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -127,7 +127,7 @@ export default function Navbar() {
         </Link>
 
         {/* Các liên kết menu chính */}
-        <div className="hidden md:flex items-center gap-3 text-sm font-semibold text-slate-700">
+        <div className="hidden md:flex items-center gap-2 text-sm font-semibold text-slate-700">
           <Link 
             to="/" 
             className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
@@ -143,6 +143,16 @@ export default function Navbar() {
             }`}
           >
             Giới thiệu
+          </Link>
+
+          {/* Link "Lịch Trực" được chuẩn hóa giao diện */}
+          <Link 
+            to="/shifts" 
+            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 ${
+              isActive('/shifts') ? 'bg-[#800020] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Calendar className="w-4 h-4" /> Lịch Trực
           </Link>
 
           {/* MENU XỔ XUỐNG: THÀNH VIÊN & BAN CHỦ NHIỆM */}
@@ -189,7 +199,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Khu vực hiển thị tài khoản cá nhân / Đăng nhập (Gộp Quản trị vào đây) */}
+        {/* Khu vực hiển thị tài khoản cá nhân / Đăng nhập */}
         <div className="flex items-center gap-4">
           {currentUser ? (
             <div className="relative" ref={userMenuRef}>
@@ -223,7 +233,7 @@ export default function Navbar() {
                 <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* MENU XỔ XUỐNG CỦA USER (Tích hợp cả Sửa thông tin, Quản trị & Đăng xuất) */}
+              {/* MENU XỔ XUỐNG CỦA USER */}
               {isUserDropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   
@@ -247,6 +257,13 @@ export default function Navbar() {
                       <div className="my-1 border-t border-slate-100"></div>
                       <div className="px-4 py-1 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">Khu vực Quản trị</div>
                       
+                      <Link 
+                        to="/admin/shifts" 
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors"
+                      >
+                        <Calendar className="w-4 h-4 text-emerald-600" /> Quản lý & Phân công Trực
+                      </Link>
+
                       <Link 
                         to="/admin/members" 
                         className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-amber-600 transition-colors"

@@ -3,9 +3,10 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
-import userRoutes from './routes/userRoutes.js'; // <-- 1. Import file route thành viên
+import userRoutes from './routes/userRoutes.js'; 
 import accountRoutes from './routes/accountRoutes.js';
 import profileRoutes from './routes/profile.js';
+import shiftRoutes from './routes/shiftRoutes.js'; // ✅ Sửa lại dùng import chuẩn ESM và có đuôi .js
 
 dotenv.config();
 
@@ -20,10 +21,12 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Khai báo Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes); // 🛠 2. BỔ SUNG DÒNG NÀY ĐỂ KÍCH HOẠT ROUTE USERS
+app.use('/api/users', userRoutes); 
 app.use('/api/accounts', accountRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/profile', profileRoutes);
+app.use('/api/shifts', shiftRoutes); // ✅ Đăng ký route ca trực thành công
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Backend Server đang chạy tại http://localhost:${PORT}`);

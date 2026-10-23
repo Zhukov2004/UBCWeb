@@ -16,7 +16,7 @@ export default function Home() {
 
   // Hiệu ứng số nhảy thống kê
   useEffect(() => {
-    const targets = { membersCount: 300, generationsCount: 7, campusesCount: 3, yearsCount: 10 };
+    const targets = { membersCount: 300, generationsCount: 5, campusesCount: 3, yearsCount: 6 };
     let current = { membersCount: 0, generationsCount: 0, campusesCount: 0, yearsCount: 0 };
 
     const interval = setInterval(() => {
@@ -57,10 +57,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent pointer-events-none"></div>
 
         <div className="relative z-10 w-full max-w-6xl mx-auto px-4 pb-12 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/25 text-red-100 px-5 py-2 rounded-full text-sm font-medium backdrop-blur-md shadow-inner">
-            <Sparkles className="w-4 h-4 text-yellow-300" /> 
-            <span>Ngôi nhà chung của những trái tim nhiệt huyết UNETI</span>
-          </div>
+          
 
           <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tight text-white drop-shadow-lg">
             Đội Ngũ & Thành Viên Câu Lạc Bộ Sách UNETI
