@@ -6,7 +6,8 @@ export default function ShiftManagement() {
   const [loading, setLoading] = useState(true);
   const [selectedShift, setSelectedShift] = useState(null);
   
-  const [notification, setNotification] = useState(null);
+  // State quản lý Popup Modal trung tâm
+  const [modalInfo, setModalInfo] = useState(null); // { title: '', message: '', type: 'success' | 'error', reloadOnClose: boolean }
 
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = currentUser?.role?.toLowerCase() || '';
@@ -21,11 +22,16 @@ export default function ShiftManagement() {
 
   const API_URL = getApiUrl();
 
-  const showNotification = (message, type = 'success') => {
-    setNotification({ message, type });
-    setTimeout(() => {
-      setNotification(null);
-    }, 4000);
+  const showModal = (title, message, type = 'success', reloadOnClose = false) => {
+    setModalInfo({ title, message, type, reloadOnClose });
+  };
+
+  const handleCloseModal = () => {
+    const shouldReload = modalInfo?.reloadOnClose;
+    setModalInfo(null);
+    if (shouldReload) {
+      window.location.reload();
+    }
   };
 
   const fetchShifts = async () => {
@@ -48,11 +54,15 @@ export default function ShiftManagement() {
     fetchShifts();
   }, []);
 
+  // Kiểm tra thời hạn đăng ký theo giờ Việt Nam (GMT+7)
   const checkRegistrationTime = () => {
     const now = new Date();
-    const day = now.getDay(); 
-    const hour = now.getHours();
-    const minute = now.getMinutes();
+    const vnTimeString = now.toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh" });
+    const vnDate = new Date(vnTimeString);
+
+    const day = vnDate.getDay(); // 0: Chủ Nhật, 6: Thứ Bảy
+    const hour = vnDate.getHours();
+    const minute = vnDate.getMinutes();
     const totalMinutes = hour * 60 + minute;
 
     const isSatValid = (day === 6 && totalMinutes >= 17 * 60);
@@ -63,12 +73,16 @@ export default function ShiftManagement() {
 
   const handleRegister = async (shiftId) => {
     if (!currentUser?.msv) {
-      showNotification('Vui lòng đăng nhập tài khoản có mã sinh viên để đăng ký!', 'error');
+      showModal('Chưa Đăng Nhập', 'Vui lòng đăng nhập tài khoản có mã sinh viên để đăng ký lịch trực!', 'error');
       return;
     }
 
     if (!checkRegistrationTime()) {
-      showNotification('Chưa đến thời gian đăng ký! Thời gian mở: Từ 17h Thứ Bảy đến 22h Chủ Nhật.', 'error');
+      showModal(
+        'Chưa Đến Thời Gian Đăng Ký', 
+        'Hệ thống mở đăng ký từ 17:00 Thứ Bảy đến 22:00 Chủ Nhật hàng tuần. Hiện tại chưa đến thời gian cho phép.', 
+        'error'
+      );
       return;
     }
 
@@ -86,14 +100,10 @@ export default function ShiftManagement() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Đăng ký thất bại');
       
-      showNotification('Gửi nguyện vọng thành công! Đang tải lại trang...', 'success');
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      showModal('Thành Công', 'Gửi nguyện vọng đăng ký ca trực thành công! Đang cập nhật lại hệ thống.', 'success', true);
 
     } catch (err) {
-      showNotification(err.message, 'error');
+      showModal('Lỗi Đăng Ký', err.message, 'error');
     }
   };
 
@@ -114,26 +124,29 @@ export default function ShiftManagement() {
   return (
     <div className="min-h-screen bg-slate-100 py-8 px-4 sm:px-6 lg:px-8 font-sans relative text-sm">
       
-      {/* TOAST NOTIFICATION */}
-      {notification && (
-        <div className="fixed top-24 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-xs font-bold ${
-            notification.type === 'success' 
-              ? 'bg-emerald-900 text-white border-emerald-700' 
-              : 'bg-rose-900 text-white border-rose-700'
-          }`}>
-            {notification.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-            ) : (
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-            )}
-            <span>{notification.message}</span>
-            <button 
-              onClick={() => setNotification(null)}
-              className="ml-2 p-1 rounded-lg hover:bg-white/10 transition text-white/70 hover:text-white cursor-pointer"
+      {/* 🔔 POPUP MODAL TRUNG TÂM */}
+      {modalInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full mx-auto shadow-2xl border border-slate-200 space-y-5 text-center animate-in zoom-in-95 duration-200">
+            
+            <div className={`w-14 h-14 rounded-full mx-auto flex items-center justify-center shadow-inner ${
+              modalInfo.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+            }`}>
+              {modalInfo.type === 'success' ? <CheckCircle2 className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">{modalInfo.title}</h3>
+              <p className="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">{modalInfo.message}</p>
+            </div>
+
+            <button
+              onClick={handleCloseModal}
+              className="w-full py-3 bg-[#800020] hover:bg-[#600018] text-white font-bold text-xs uppercase tracking-wider rounded-2xl shadow-md transition cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              Đã Hiểu / Đóng
             </button>
+
           </div>
         </div>
       )}

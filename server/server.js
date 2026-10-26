@@ -6,8 +6,8 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/userRoutes.js'; 
 import accountRoutes from './routes/accountRoutes.js';
 import profileRoutes from './routes/profile.js';
-import shiftRoutes from './routes/shiftRoutes.js'; // ✅ Sửa lại dùng import chuẩn ESM và có đuôi .js
-
+import shiftRoutes from './routes/shiftRoutes.js';
+import genTeamRoutes from './routes/genTeamRoutes.js';
 dotenv.config();
 
 const app = express();
@@ -25,8 +25,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/profile', profileRoutes);
-app.use('/api/shifts', shiftRoutes); // ✅ Đăng ký route ca trực thành công
-
+app.use('/api/shifts', shiftRoutes);
+app.use('/api/gens', genTeamRoutes);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Backend Server đang chạy tại http://localhost:${PORT}`);

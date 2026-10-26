@@ -113,7 +113,7 @@ export default function CoreTeamGenPage() {
   const currentMembers = filteredMembers.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-6xl mx-auto">
         
         {/* Tiêu đề trang động theo Gen */}
@@ -194,8 +194,8 @@ export default function CoreTeamGenPage() {
           </div>
         </div>
 
-        {loading && <div className="text-center py-20 text-slate-500 font-medium">Đang tải danh sách Gen {gen}...</div>}
-        {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-center max-w-md mx-auto font-medium">{error}</div>}
+        {loading && <div className="text-center py-20 text-slate-500 font-medium text-sm">Đang tải danh sách Gen {gen}...</div>}
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-center max-w-md mx-auto font-medium text-sm">{error}</div>}
 
         {/* LƯỚI HIỂN THỊ THÀNH VIÊN */}
         {!loading && !error && (
@@ -249,7 +249,7 @@ export default function CoreTeamGenPage() {
                 );
               })
             ) : (
-              <div className="col-span-full text-center py-16 text-slate-400 font-medium">
+              <div className="col-span-full text-center py-16 text-slate-400 font-medium text-sm">
                 Không tìm thấy thành viên Gen {gen} phù hợp với bộ lọc.
               </div>
             )}

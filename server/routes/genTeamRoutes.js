@@ -3,9 +3,9 @@ import mongoose from 'mongoose';
 
 const router = express.Router();
 
-// Hàm tạo model tạm thời trỏ thẳng vào các collection gen2, gen3, gen4 có sẵn của bạn
+// Hàm tạo model tạm thời trỏ thẳng vào các collection bcngen2, bcngen3, bcngen4 có sẵn của bạn
 const getGenModel = (genNumber) => {
-    const collectionName = `gen${genNumber}`;
+    const collectionName = `bcngen${genNumber}`; // Đã sửa từ gen thành bcngen
     return mongoose.models[collectionName] || mongoose.model(collectionName, new mongoose.Schema({}, { strict: false }), collectionName);
 };
 
